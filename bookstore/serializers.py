@@ -91,13 +91,6 @@ class UpdateReviewSerializer(serializers.ModelSerializer):
         fields = ['star', 'content']
 
 
-class CartSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cart
-        fields = ['id']
-        read_only_fields = ['id']
-
-
 class BookItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
@@ -120,3 +113,16 @@ class AddCartItemSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         cart_id = self.context['cart_pk']
         return CartItem.objects.create(cart_id=cart_id, **validated_data)
+
+
+class CartSerializer(serializers.ModelSerializer):
+    cart_items = CartItemSerializer(many=True, read_only=True)
+    total = serializers.SerializerMethodField()
+
+    def get_total(self, cart):
+        return sum(item.book.price for item in cart.cart_items.all())
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'cart_items', 'total']
+        read_only_fields = ['id']
