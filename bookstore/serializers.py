@@ -47,3 +47,27 @@ class AddBookSerializer(serializers.ModelSerializer):
         book.slug = slugify(book.name, allow_unicode=True)
         book.save()
         return book
+
+
+class BookReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['name']
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    book = BookReviewSerializer()
+
+    class Meta:
+        model = Review
+        fields = ['star', 'book', 'content']
+
+
+class AddReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['star', 'book', 'content']
+
+    def create(self, validated_data):
+        user_id = self.context['user_id']
+        return Review.objects.create(user_id=user_id, **validated_data)

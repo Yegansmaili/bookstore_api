@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from .models import Book
 
@@ -33,3 +34,24 @@ class GenreViewSet(ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+
+class ReviewViewSet(ModelViewSet):
+    queryset = Review.objects.select_related('book').all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AddReviewSerializer
+        return ReviewSerializer
+
+    def get_serializer_context(self):
+        return {'user_id': self.request.user.id}
+
+    def create(self, request, *args, **kwargs):
+        create_review_serializer = AddReviewSerializer(data=request.data,
+                                                       context={'user_id': self.request.user.id})
+        create_review_serializer.is_valid(raise_exception=True)
+        created_review = create_review_serializer.save()
+        serializer = ReviewSerializer(created_review)
+        return Response(serializer.data)
