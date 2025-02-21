@@ -70,7 +70,25 @@ class AddReviewSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_id = self.context['user_id']
-        return Review.objects.create(user_id=user_id, **validated_data)
+        book = validated_data.get('book')
+        star = validated_data.get('star')
+        content = validated_data.get('content')
+        try:
+            review_obj = Review.objects.get(user_id=user_id, book_id=book.id)
+            review_obj.star = star
+            review_obj.content = content
+            review_obj.save()
+
+        except Review.DoesNotExist:
+            review_obj = Review.objects.create(user_id=user_id, **validated_data)
+
+        return review_obj
+
+
+class UpdateReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['star', 'content']
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -78,3 +96,27 @@ class CartSerializer(serializers.ModelSerializer):
         model = Cart
         fields = ['id']
         read_only_fields = ['id']
+
+
+class BookItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['name', 'price']
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    book = BookItemSerializer()
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'book']
+
+
+class AddCartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['id', 'book']
+
+    def create(self, validated_data):
+        cart_id = self.context['cart_pk']
+        return CartItem.objects.create(cart_id=cart_id, **validated_data)
