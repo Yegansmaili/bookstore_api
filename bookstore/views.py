@@ -1,18 +1,17 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 
-from .models import Book
+from .models import *
 
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework import status, mixins
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from .permissions import IsAdminOrReadOnly
 from .serializers import *
 
 
 class BookViewSet(ModelViewSet):
-    # queryset = Book.objects.select_related('genre').all()
     permission_classes = [IsAdminOrReadOnly]
 
     def get_serializer_class(self):
@@ -68,3 +67,11 @@ class ReviewViewSet(ModelViewSet):
         created_review = create_review_serializer.save()
         serializer = ReviewSerializer(created_review)
         return Response(serializer.data)
+
+
+class CartViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  GenericViewSet,
+                  mixins.DestroyModelMixin):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer

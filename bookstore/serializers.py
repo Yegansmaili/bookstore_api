@@ -6,7 +6,7 @@ from .models import *
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
-        fields = ['id','name', 'description']
+        fields = ['id', 'name', 'description']
 
     def create(self, validated_data):
         name = validated_data.get('name')
@@ -71,3 +71,10 @@ class AddReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user_id = self.context['user_id']
         return Review.objects.create(user_id=user_id, **validated_data)
+
+
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id']
+        read_only_fields = ['id']
