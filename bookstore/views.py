@@ -12,7 +12,7 @@ from .serializers import *
 
 
 class BookViewSet(ModelViewSet):
-    queryset = Book.objects.select_related('genre').all()
+    # queryset = Book.objects.select_related('genre').all()
     permission_classes = [IsAdminOrReadOnly]
 
     def get_serializer_class(self):
@@ -21,6 +21,13 @@ class BookViewSet(ModelViewSet):
         if self.request.method == 'PUT' or self.request.method == 'PATCH':
             return UpdateBookSerializer
         return BookSerializer
+
+    def get_queryset(self):
+        queryset = Book.objects.select_related('genre').all()
+        genre_slug = self.kwargs.get('genre_pk')
+        if genre_slug is not None:
+            queryset = queryset.filter(genre__slug=genre_slug).all()
+        return queryset
 
     def create(self, request, *args, **kwargs):
         create_book_serializer = AddBookSerializer(data=request.data)
@@ -37,8 +44,14 @@ class GenreViewSet(ModelViewSet):
 
 
 class ReviewViewSet(ModelViewSet):
-    queryset = Review.objects.select_related('book').all()
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Review.objects.select_related('book').all()
+        book_slug = self.kwargs.get('book_pk')
+        if book_slug is not None:
+            queryset = queryset.filter(book__slug=book_slug).all()
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

@@ -6,7 +6,7 @@ from .models import *
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
-        fields = ['name', 'description']
+        fields = ['id','name', 'description']
 
     def create(self, validated_data):
         name = validated_data.get('name')
