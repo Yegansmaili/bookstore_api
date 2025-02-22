@@ -25,7 +25,7 @@ class BookViewSet(ModelViewSet):
         return BookSerializer
 
     def get_queryset(self):
-        queryset = Book.objects.select_related('genre').prefetch_related('reviews').all()
+        queryset = Book.objects.select_related('genre').prefetch_related('reviews', 'order_items').all()
         genre_slug = self.kwargs.get('genre_pk')
         if genre_slug is not None:
             queryset = queryset.filter(genre__slug=genre_slug).all()
@@ -37,6 +37,14 @@ class BookViewSet(ModelViewSet):
         created_book = create_book_serializer.save()
         serializer = BookSerializer(created_book)
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        book = self.get_object()
+        if book.order_items.count() > 0:
+            return Response('some order items have this book',
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        book.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GenreViewSet(ModelViewSet):
@@ -109,22 +117,36 @@ class CartItemViewSet(ModelViewSet):
 
 
 class OrderViewSet(ModelViewSet):
-    queryset = Order.objects.prefetch_related('order_items__book').all()
-    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'head', 'options', 'post', 'delete']
 
-    # get user
+    # permission_classes = [custom ... admin or authenticate]
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return CreateOrderSerializer
         return OrderSerializer
 
+    def get_queryset(self):
+        queryset = Order.objects.prefetch_related('order_items__book').all()
+        if self.request.user.is_staff:
+            return queryset
+        return queryset.filter(user_id=self.request.user.id)
+
     def get_serializer_context(self):
         return {'user_id': self.request.user.id}
+
+    def destroy(self, request, *args, **kwargs):
+        order = self.get_object()
+        if order.order_items.count() > 0:
+            return Response('There are some items in this order',
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class OrderItemViewSet(ModelViewSet):
     http_method_names = ['get', 'head', 'options']
-
+    permission_classes = [IsAuthenticated]
     serializer_class = OrderItemSerializer
 
     def get_queryset(self):

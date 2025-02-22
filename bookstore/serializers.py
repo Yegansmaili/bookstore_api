@@ -129,10 +129,30 @@ class CartSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class BookOrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['name', 'file']
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    book = BookOrderItemSerializer()
+
+    class Meta:
+        model = OrderItem
+        fields = ['order', 'book', 'price']
+
+
 class OrderSerializer(serializers.ModelSerializer):
+    order_items = OrderItemSerializer(many=True, read_only=True)
+    total = serializers.SerializerMethodField()
+
+    def get_total(self,order):
+        return sum(item.price for item in order.order_items.all())
+
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = ['id', 'order_items', 'total']
 
 
 class CreateOrderSerializer(serializers.Serializer):
@@ -165,17 +185,3 @@ class CreateOrderSerializer(serializers.Serializer):
             Cart.objects.filter(id=cart_id).delete()
 
             return order
-
-
-class BookOrderItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Book
-        fields = ['name', 'file']
-
-
-class OrderItemSerializer(serializers.ModelSerializer):
-    book = BookOrderItemSerializer()
-
-    class Meta:
-        model = OrderItem
-        fields = ['order', 'book', 'price']
