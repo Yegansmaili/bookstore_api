@@ -119,7 +119,10 @@ class CartItemViewSet(ModelViewSet):
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'head', 'options', 'post', 'delete']
 
-    # permission_classes = [custom ... admin or authenticate]
+    def get_permissions(self):
+        if self.request.method == 'DELETE':
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -153,9 +156,14 @@ class OrderViewSet(ModelViewSet):
 
 
 class OrderItemViewSet(ModelViewSet):
-    http_method_names = ['get', 'head', 'options', 'delete']  # handle this permission
+    http_method_names = ['get', 'head', 'options', 'delete']
     permission_classes = [IsAuthenticated]
     serializer_class = OrderItemSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'DELETE':
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         order_id = self.kwargs['order_pk']

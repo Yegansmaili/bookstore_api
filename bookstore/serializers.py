@@ -140,14 +140,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['order', 'book', 'price']
+        fields = ['id','book', 'price']
+        read_only_fields = ['id']
 
 
 class OrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializer(many=True, read_only=True)
     total = serializers.SerializerMethodField()
 
-    def get_total(self,order):
+    def get_total(self, order):
         return sum(item.price for item in order.order_items.all())
 
     class Meta:
