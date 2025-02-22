@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.text import slugify
 from rest_framework import serializers
 from .models import *
@@ -91,14 +92,14 @@ class UpdateReviewSerializer(serializers.ModelSerializer):
         fields = ['star', 'content']
 
 
-class BookItemSerializer(serializers.ModelSerializer):
+class BookCartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['name', 'price']
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    book = BookItemSerializer()
+    book = BookCartItemSerializer()
 
     class Meta:
         model = CartItem
@@ -126,3 +127,55 @@ class CartSerializer(serializers.ModelSerializer):
         model = Cart
         fields = ['id', 'cart_items', 'total']
         read_only_fields = ['id']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
+
+
+class CreateOrderSerializer(serializers.Serializer):
+    cart_id = serializers.UUIDField()
+
+    def validate_cart_id(self, cart_id):
+        if not Cart.objects.filter(id=cart_id).exists():
+            raise serializers.ValidationError('There is no such cart')
+        if CartItem.objects.filter(cart_id=cart_id).count() == 0:
+            raise serializers.ValidationError('There is no item in this cart')
+        return cart_id
+
+    def save(self, **kwargs):
+        with transaction.atomic():
+            cart_id = self.validated_data['cart_id']
+            print(cart_id)
+            user_id = self.context['user_id']
+            cart_items = CartItem.objects.filter(cart_id=cart_id).select_related('book').all()
+            order_items = []
+
+            order = Order(user_id=user_id)
+            order.save()
+            for item in cart_items:
+                order_item = OrderItem()
+                order_item.order = order
+                order_item.book = item.book
+                order_item.price = item.book.price
+                order_items.append(order_item)
+            OrderItem.objects.bulk_create(order_items)
+            Cart.objects.filter(id=cart_id).delete()
+
+            return order
+
+
+class BookOrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['name', 'file']
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    book = BookOrderItemSerializer()
+
+    class Meta:
+        model = OrderItem
+        fields = ['order', 'book', 'price']

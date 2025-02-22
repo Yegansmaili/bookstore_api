@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 
 from .models import *
 
@@ -103,3 +103,28 @@ class CartItemViewSet(ModelViewSet):
         created_item = created_item_serializer.save()
         serializer = CartItemSerializer(created_item)
         return Response(serializer.data)
+
+
+class OrderViewSet(ModelViewSet):
+    queryset = Order.objects.prefetch_related('order_items__book').all()
+    permission_classes = [IsAuthenticated]
+
+    # get user
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        return OrderSerializer
+
+    def get_serializer_context(self):
+        return {'user_id': self.request.user.id}
+
+
+class OrderItemViewSet(ModelViewSet):
+    http_method_names = ['get', 'head', 'options']
+    serializer_class = OrderItemSerializer
+
+    def get_queryset(self):
+        order_id = self.kwargs['order_pk']
+        return OrderItem.objects.select_related('order', 'book').filter(order_id = order_id).all()
+
+
