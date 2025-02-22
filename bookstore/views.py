@@ -1,6 +1,9 @@
+from django.http import FileResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
+from rest_framework.reverse import reverse
+from rest_framework.views import APIView
 
 from .models import *
 
@@ -121,10 +124,38 @@ class OrderViewSet(ModelViewSet):
 
 class OrderItemViewSet(ModelViewSet):
     http_method_names = ['get', 'head', 'options']
+
     serializer_class = OrderItemSerializer
 
     def get_queryset(self):
         order_id = self.kwargs['order_pk']
-        return OrderItem.objects.select_related('order', 'book').filter(order_id = order_id).all()
+        return OrderItem.objects.select_related('order', 'book').filter(order_id=order_id).all()
+
+    def list(self, request, *args, **kwargs):
+        items = self.get_queryset()
+        serializer = OrderItemSerializer(items, many=True)
+        download_links = {
+            item.book.name: request.build_absolute_uri(reverse('file-download', args=[item.book.slug]))
+            for item in items
+        }
+        response_data = {
+            'items': serializer.data,
+            'download_links': download_links
+        }
+        return Response(response_data, status=200)
 
 
+class DownloadFileView(APIView):
+    def get(self, request, slug):
+        try:
+            book = Book.objects.get(slug=slug)
+        except Book.DoesNotExist:
+            return Response({'error': 'Book not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not book.file:
+            return Response({'error': 'File Url not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        file_path = book.file.path
+        response = FileResponse(open(file_path, 'rb'))
+        response['Content-Disposition'] = f'attachment; filename="{book.file.name}"'
+        return response
