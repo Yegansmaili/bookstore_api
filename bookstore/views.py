@@ -135,6 +135,14 @@ class OrderViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'user_id': self.request.user.id}
 
+    def create(self, request, *args, **kwargs):
+        create_order_serializer = CreateOrderSerializer(data=request.data,
+                                                        context={'user_id': self.request.user.id})
+        create_order_serializer.is_valid(raise_exception=True)
+        created_order = create_order_serializer.save()
+        serializer = OrderSerializer(created_order)
+        return Response(serializer.data)
+
     def destroy(self, request, *args, **kwargs):
         order = self.get_object()
         if order.order_items.count() > 0:
@@ -145,7 +153,7 @@ class OrderViewSet(ModelViewSet):
 
 
 class OrderItemViewSet(ModelViewSet):
-    http_method_names = ['get', 'head', 'options']
+    http_method_names = ['get', 'head', 'options', 'delete']  # handle this permission
     permission_classes = [IsAuthenticated]
     serializer_class = OrderItemSerializer
 
