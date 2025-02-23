@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Avg
 from django.utils.text import slugify
 from rest_framework import serializers
 from .models import *
@@ -26,10 +27,19 @@ class BookGenreSerializer(serializers.ModelSerializer):
 
 class BookSerializer(serializers.ModelSerializer):
     genre = BookGenreSerializer()
+    review = serializers.SerializerMethodField()
+
+    def get_review(self, book):
+        total_reviews = book.reviews.count()
+        if not total_reviews == 0:
+            review = (sum(int(review.star) for review in book.reviews.all())) / total_reviews
+            return review
+        else:
+            return 'No review'
 
     class Meta:
         model = Book
-        fields = ['id', 'name', 'description', 'author', 'genre', 'price']
+        fields = ['id', 'name', 'description', 'author', 'genre', 'price', 'review']
 
 
 class UpdateBookSerializer(serializers.ModelSerializer):

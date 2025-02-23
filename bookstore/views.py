@@ -28,7 +28,7 @@ class BookViewSet(ModelViewSet):
         return BookSerializer
 
     def get_queryset(self):
-        queryset = Book.objects.select_related('genre').all()
+        queryset = Book.objects.select_related('genre').prefetch_related('reviews').all()
         genre_slug = self.kwargs.get('genre_pk')
         if genre_slug is not None:
             queryset = queryset.filter(genre__slug=genre_slug).all()
