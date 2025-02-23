@@ -3,7 +3,9 @@ from django.db.models import Subquery, Exists, OuterRef, Count
 from django.http import FileResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
@@ -19,6 +21,12 @@ from .serializers import *
 
 class BookViewSet(ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [SearchFilter, DjangoFilterBackend, OrderingFilter]
+    ordering_fields = ['name', 'datetime_created']
+    search_fields = ['name', 'genre__name']
+
+    # filterset_fields = ['genre__name']
+    # _id', 'inventory']
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -57,7 +65,7 @@ class BookViewSet(ModelViewSet):
         books = user_reviews.values_list('book', flat=True)
         suggested_books = self.get_queryset().filter(genre__in=Subquery(genres)).exclude(id__in=[books])[:4]
 
-        serializer = SuggestGenresSerializer(suggested_books, many=True)
+        serializer = SuggestBookGenresSerializer(suggested_books, many=True)
         return Response(serializer.data)
 
 
@@ -65,10 +73,16 @@ class GenreViewSet(ModelViewSet):
     queryset = Genre.objects.prefetch_related('books').all()
     serializer_class = GenreSerializer
     permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [SearchFilter, DjangoFilterBackend,]
+    search_fields = ['name', ]
 
 
 class ReviewViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [SearchFilter, DjangoFilterBackend, OrderingFilter]
+    search_fields = ['book__name']
+    filterset_fields = ['star']
+    ordering_fields = ['star']
 
     def get_queryset(self):
         queryset = Review.objects.select_related('book__genre').all()
@@ -106,6 +120,9 @@ class CartViewSet(mixins.CreateModelMixin,
 
 class CartItemViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'delete', 'head', 'options']
+
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = ['book__name', ]
 
     def get_queryset(self):
         cart_pk = self.kwargs.get('cart_pk')

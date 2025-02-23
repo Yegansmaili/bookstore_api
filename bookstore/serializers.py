@@ -102,12 +102,12 @@ class UpdateReviewSerializer(serializers.ModelSerializer):
         fields = ['star', 'content']
 
 
-class SuggestGenresSerializer(serializers.ModelSerializer):
+class SuggestBookGenresSerializer(serializers.ModelSerializer):
     genre = BookGenreSerializer()
 
     class Meta:
         model = Book
-        fields = ['genre', 'name', 'price', ]
+        fields = ['name','genre', 'price', ]
 
 
 class BookCartItemSerializer(serializers.ModelSerializer):

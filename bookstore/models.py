@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.conf import settings
 from uuid import uuid4
@@ -41,6 +40,9 @@ class Review(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reviews')
     content = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ['book', 'user']
 
     def __str__(self):
         return f'{self.user}-{self.book} : {self.star}'
