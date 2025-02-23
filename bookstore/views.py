@@ -1,6 +1,9 @@
+from django.contrib.auth import get_user_model
+from django.db.models import Subquery, Exists, OuterRef, Count
 from django.http import FileResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
@@ -25,7 +28,7 @@ class BookViewSet(ModelViewSet):
         return BookSerializer
 
     def get_queryset(self):
-        queryset = Book.objects.select_related('genre').prefetch_related('reviews', 'order_items').all()
+        queryset = Book.objects.select_related('genre').all()
         genre_slug = self.kwargs.get('genre_pk')
         if genre_slug is not None:
             queryset = queryset.filter(genre__slug=genre_slug).all()
@@ -46,6 +49,17 @@ class BookViewSet(ModelViewSet):
         book.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=False, methods=['GET', 'HEAD', 'OPTIONS'], permission_classes=[IsAuthenticated])
+    def suggest(self, request):
+        user_reviews = Review.objects.select_related('book__genre', 'user').filter(user_id=self.request.user.id,
+                                                                                   star__gt=3).all()
+        genres = user_reviews.values_list('book__genre', flat=True).distinct()
+        books = user_reviews.values_list('book', flat=True)
+        suggested_books = self.get_queryset().filter(genre__in=Subquery(genres)).exclude(id__in=[books])[:4]
+
+        serializer = SuggestGenresSerializer(suggested_books, many=True)
+        return Response(serializer.data)
+
 
 class GenreViewSet(ModelViewSet):
     queryset = Genre.objects.prefetch_related('books').all()
@@ -57,7 +71,7 @@ class ReviewViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        queryset = Review.objects.select_related('book', 'user').all()
+        queryset = Review.objects.select_related('book__genre').all()
         book_slug = self.kwargs.get('book_pk')
         if book_slug is not None:
             queryset = queryset.filter(book__slug=book_slug).all()

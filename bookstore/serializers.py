@@ -92,6 +92,14 @@ class UpdateReviewSerializer(serializers.ModelSerializer):
         fields = ['star', 'content']
 
 
+class SuggestGenresSerializer(serializers.ModelSerializer):
+    genre = BookGenreSerializer()
+
+    class Meta:
+        model = Book
+        fields = ['genre', 'name', 'price', ]
+
+
 class BookCartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
@@ -140,7 +148,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id','book', 'price']
+        fields = ['id', 'book', 'price']
         read_only_fields = ['id']
 
 
