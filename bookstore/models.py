@@ -26,6 +26,13 @@ class Book(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def averaged_review(self):
+        counts = self.reviews.count()
+        if not counts == 0:
+            return (sum(int(review.star) for review in self.reviews.all())) / counts
+        return 'no reviews'
+
 
 class Review(models.Model):
     BOOK_STAR = [

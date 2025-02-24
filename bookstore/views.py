@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, I
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 
+from .filters import BookFilter
 from .models import *
 
 from rest_framework.response import Response
@@ -24,9 +25,7 @@ class BookViewSet(ModelViewSet):
     filter_backends = [SearchFilter, DjangoFilterBackend, OrderingFilter]
     ordering_fields = ['name', 'datetime_created']
     search_fields = ['name', 'genre__name']
-
-    # filterset_fields = ['genre__name']
-    # _id', 'inventory']
+    filterset_class = BookFilter
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -85,7 +84,7 @@ class ReviewViewSet(ModelViewSet):
     ordering_fields = ['star']
 
     def get_queryset(self):
-        queryset = Review.objects.select_related('book__genre').all()
+        queryset = Review.objects.select_related('book__genre','user').all()
         book_slug = self.kwargs.get('book_pk')
         if book_slug is not None:
             queryset = queryset.filter(book__slug=book_slug).all()

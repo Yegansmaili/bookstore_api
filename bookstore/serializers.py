@@ -27,19 +27,10 @@ class BookGenreSerializer(serializers.ModelSerializer):
 
 class BookSerializer(serializers.ModelSerializer):
     genre = BookGenreSerializer()
-    review = serializers.SerializerMethodField()
-
-    def get_review(self, book):
-        total_reviews = book.reviews.count()
-        if not total_reviews == 0:
-            review = (sum(int(review.star) for review in book.reviews.all())) / total_reviews
-            return review
-        else:
-            return 'No review'
 
     class Meta:
         model = Book
-        fields = ['id', 'name', 'description', 'author', 'genre', 'price', 'review']
+        fields = ['id', 'name', 'description', 'author', 'genre', 'price', 'averaged_review']
 
 
 class UpdateBookSerializer(serializers.ModelSerializer):
@@ -68,10 +59,11 @@ class BookReviewSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     book = BookReviewSerializer()
+    user = serializers.CharField(source='user.email')
 
     class Meta:
         model = Review
-        fields = ['star', 'book', 'content']
+        fields = ['user', 'star', 'book', 'content']
 
 
 class AddReviewSerializer(serializers.ModelSerializer):
@@ -107,7 +99,7 @@ class SuggestBookGenresSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['name','genre', 'price', ]
+        fields = ['name', 'genre', 'price', ]
 
 
 class BookCartItemSerializer(serializers.ModelSerializer):

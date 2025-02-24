@@ -5,7 +5,7 @@ from .models import *
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ['name', 'price', 'author', 'datetime_created']
+    list_display = ['name', 'price', 'author', 'datetime_created','averaged_review']
     prepopulated_fields = {'slug': ('name',), }
 
 
