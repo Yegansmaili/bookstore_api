@@ -49,7 +49,7 @@ class Review(models.Model):
     content = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ['book', 'user']
+        unique_together = [['book', 'user']]
 
     def __str__(self):
         return f'{self.user}-{self.book} : {self.star}'
