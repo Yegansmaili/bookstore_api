@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'djoser',
     'django_filters',
     'debug_toolbar',
+    'drf_yasg' ,
     # local apps
     'accounts',
     'bookstore',
