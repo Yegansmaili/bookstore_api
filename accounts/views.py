@@ -7,12 +7,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import CustomUser
 from . import helper
+from .permissions import IsAdminOrPostOnly
 from .serializers import CustomUserSerializer, CustomUserOtpSerializer
 
 
 class LoginView(ModelViewSet):
     http_method_names = ['get', 'post']
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrPostOnly]
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.all()
 
@@ -38,6 +39,8 @@ class VerifyOtpView(ModelViewSet):
     http_method_names = ['post']
     serializer_class = CustomUserOtpSerializer
     queryset = CustomUser.objects.all()
+    permission_classes = [IsAdminOrPostOnly]
+
 
     def create(self, request, *args, **kwargs):
         serializer = CustomUserOtpSerializer(data=request.data)
