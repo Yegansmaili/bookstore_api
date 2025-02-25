@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.db.models import Avg
 from django.utils.text import slugify
 from rest_framework import serializers
 from .models import *

@@ -139,6 +139,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom_User_settings
 AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "accounts.backends.PhoneAuthenticationBackend"
+]
+
+Kavenegar_API = env.str('KAVENEGAR_API')
+
+LOGIN_URL = '/login/'
+
+
+
+
 
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,

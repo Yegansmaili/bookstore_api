@@ -13,6 +13,7 @@ djangorestframework_simplejwt==5.4.0
 djoser==2.3.1
 drf-nested-routers==0.94.1
 idna==3.10
+kavenegar==1.1.2
 oauthlib==3.2.2
 psycopg2-binary==2.9.10
 pycparser==2.22
